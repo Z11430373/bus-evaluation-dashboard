@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <!-- 基本網頁設定 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="台北市與新北市公車評鑑互動式儀表板 - 110-113年度完整數據分析">
+    <meta name="keywords" content="公車評鑑,台北市,新北市,首都客運,台北客運,大都會客運">
     <title>台北市與新北市公車評鑑儀表板 | Bus Evaluation Dashboard</title>
+    
+    <!-- 引入 Chart.js 圖表庫 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
     <style>
+        /* ========== 全域樣式設定 ========== */
         * {
             margin: 0;
             padding: 0;
@@ -20,6 +27,7 @@
             color: #333;
         }
 
+        /* ========== 主容器樣式 ========== */
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -29,6 +37,7 @@
             overflow: hidden;
         }
 
+        /* ========== 頁首樣式 ========== */
         .header {
             background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
             color: white;
@@ -53,6 +62,7 @@
             opacity: 0.8;
         }
 
+        /* ========== 導航標籤樣式 ========== */
         .nav-tabs {
             display: flex;
             background: #f3f4f6;
@@ -86,6 +96,7 @@
             background: white;
         }
 
+        /* ========== 內容區域樣式 ========== */
         .content {
             padding: 30px;
         }
@@ -104,6 +115,7 @@
             to { opacity: 1; }
         }
 
+        /* ========== 統計卡片樣式 ========== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -139,6 +151,7 @@
             opacity: 0.9;
         }
 
+        /* ========== 圖表容器樣式 ========== */
         .chart-container {
             position: relative;
             height: 400px;
@@ -149,6 +162,7 @@
             border: 1px solid #e5e7eb;
         }
 
+        /* ========== 表格樣式 ========== */
         .table-container {
             overflow-x: auto;
             margin-bottom: 20px;
@@ -178,6 +192,7 @@
             background: #f9fafb;
         }
 
+        /* ========== 評級徽章樣式 ========== */
         .grade-badge {
             display: inline-block;
             padding: 6px 12px;
@@ -201,11 +216,7 @@
             color: #92400e;
         }
 
-        .grade-poor {
-            background: #fecaca;
-            color: #991b1b;
-        }
-
+        /* ========== 篩選器樣式 ========== */
         .filter-group {
             display: flex;
             gap: 15px;
@@ -240,6 +251,7 @@
             box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
         }
 
+        /* ========== 資訊框樣式 ========== */
         .info-box {
             background: #eff6ff;
             border-left: 4px solid #0284c7;
@@ -258,6 +270,7 @@
             line-height: 1.6;
         }
 
+        /* ========== 對比表格樣式 ========== */
         .comparison-table {
             width: 100%;
             border-collapse: collapse;
@@ -275,6 +288,7 @@
             color: white;
         }
 
+        /* ========== 頁腳樣式 ========== */
         .footer {
             background: #f3f4f6;
             padding: 20px;
@@ -289,6 +303,7 @@
             border-radius: 3px;
         }
 
+        /* ========== 指標列表樣式 ========== */
         .indicator-list {
             list-style: none;
             margin: 15px 0;
@@ -306,6 +321,7 @@
             color: #1e3a8a;
         }
 
+        /* ========== 響應式設計 ========== */
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
@@ -321,38 +337,24 @@
 
             .nav-tab {
                 min-width: 100%;
-                border-bottom: 2px solid #e5e7eb;
-                border-right: none;
-            }
-
-            .nav-tab.active {
-                border-bottom-color: #1e3a8a;
-                border-right: 3px solid #1e3a8a;
             }
 
             .content {
                 padding: 20px;
-            }
-
-            .comparison-table {
-                font-size: 0.9em;
-            }
-
-            .comparison-table th,
-            .comparison-table td {
-                padding: 8px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- ========== 頁首區域 ========== -->
         <div class="header">
             <h1>🚌 台北市與新北市公車評鑑儀表板</h1>
             <p>Bus Service Quality Evaluation Dashboard</p>
             <p class="subtitle">110-113年度 (2021-2024) 評鑑數據分析</p>
         </div>
 
+        <!-- ========== 導航標籤區域 ========== -->
         <div class="nav-tabs">
             <button class="nav-tab active" data-tab="overview">📊 概覽</button>
             <button class="nav-tab" data-tab="taipei">🏙️ 台北市評鑑</button>
@@ -362,10 +364,11 @@
         </div>
 
         <div class="content">
-            <!-- 概覽標籤 -->
+            <!-- ========== 概覽標籤內容 ========== -->
             <div id="overview" class="tab-content active">
                 <h2 style="margin-bottom: 20px; color: #1e3a8a;">整體概覽</h2>
                 
+                <!-- 統計卡片網格 -->
                 <div class="stats-grid">
                     <div class="stat-card taipei">
                         <div class="stat-label">台北市優等業者</div>
@@ -389,10 +392,12 @@
                     </div>
                 </div>
 
+                <!-- 概覽圖表容器 -->
                 <div class="chart-container">
                     <canvas id="overviewChart"></canvas>
                 </div>
 
+                <!-- 關鍵發現資訊框 -->
                 <div class="info-box">
                     <h3>📌 關鍵發現</h3>
                     <p>✅ <strong>首都客運、台北客運、欣欣客運、大都會客運</strong>在台北市保持穩定優等地位</p>
@@ -401,13 +406,14 @@
                 </div>
             </div>
 
-            <!-- 台北市標籤 -->
+            <!-- ========== 台北市標籤內容 ========== -->
             <div id="taipei" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #1e3a8a;">台北市公車評鑑結果</h2>
                 
+                <!-- 篩選器 -->
                 <div class="filter-group">
                     <label>篩選等級：</label>
-                    <select id="taipeiFiler">
+                    <select id="taipeiFilter">
                         <option value="">全部</option>
                         <option value="優等">優等</option>
                         <option value="甲等">甲等</option>
@@ -415,6 +421,7 @@
                     </select>
                 </div>
 
+                <!-- 台北市評鑑表格 -->
                 <div class="table-container">
                     <table id="taipeiTable">
                         <thead>
@@ -427,6 +434,7 @@
                             </tr>
                         </thead>
                         <tbody id="taipeiBody">
+                            <!-- JavaScript 動態生成表格內容 -->
                         </tbody>
                     </table>
                 </div>
@@ -437,10 +445,11 @@
                 </div>
             </div>
 
-            <!-- 新北市標籤 -->
+            <!-- ========== 新北市標籤內容 ========== -->
             <div id="newtp" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #ea580c;">新北市公車評鑑結果</h2>
                 
+                <!-- 篩選器 -->
                 <div class="filter-group">
                     <label>篩選等級：</label>
                     <select id="newtpFilter">
@@ -451,6 +460,7 @@
                     </select>
                 </div>
 
+                <!-- 新北市評鑑表格 -->
                 <div class="table-container">
                     <table id="newtpTable">
                         <thead>
@@ -463,6 +473,7 @@
                             </tr>
                         </thead>
                         <tbody id="newtpBody">
+                            <!-- JavaScript 動態生成表格內容 -->
                         </tbody>
                     </table>
                 </div>
@@ -473,10 +484,11 @@
                 </div>
             </div>
 
-            <!-- 對比分析標籤 -->
+            <!-- ========== 對比分析標籤內容 ========== -->
             <div id="comparison" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #1e3a8a;">台北市 vs 新北市</h2>
                 
+                <!-- 對比圖表容器 -->
                 <div class="chart-container">
                     <canvas id="comparisonChart"></canvas>
                 </div>
@@ -530,7 +542,7 @@
                 </div>
             </div>
 
-            <!-- 評鑑指標標籤 -->
+            <!-- ========== 評鑑指標標籤內容 ========== -->
             <div id="indicators" class="tab-content">
                 <h2 style="margin-bottom: 20px; color: #1e3a8a;">評鑑指標說明</h2>
                 
@@ -571,10 +583,10 @@
 
                 <h3 style="color: #1e3a8a;">5️⃣ 公司經營與管理</h3>
                 <ul class="indicator-list">
-                    <li><strong>內部控制制度：</strong>員工管理規則、财務稽核、風險評估</li>
+                    <li><strong>內部控制制度：</strong>員工管理規則、財務稽核、風險評估</li>
                     <li><strong>法律合規性：</strong>勞動法規遵守、稅務申報、營業執照有效性</li>
                     <li><strong>品質管理制度：</strong>ISO認證、品質改善計畫、顧客滿意度調查</li>
-                    <li><strong>數據透明化：</strong>成績公開、改善計畫發佈、民眾知情權</li>
+                    <li><strong>數據透明化：</strong>成績公開、改善計畫發布、民眾知情權</li>
                 </ul>
 
                 <div class="info-box" style="margin-top: 30px;">
@@ -587,6 +599,7 @@
             </div>
         </div>
 
+        <!-- ========== 頁腳區域 ========== -->
         <div class="footer">
             <p>資料來源：台北市公共運輸處、新北市政府交通局 | 更新日期：2025年2月 | 數據截止：113年度第2期</p>
             <p>© 2025 Bus Evaluation Dashboard | <a href="https://github.com/Z11430373/bus-evaluation-dashboard" style="color: #0284c7; text-decoration: none;">View on GitHub</a></p>
@@ -594,7 +607,9 @@
     </div>
 
     <script>
-        // 數據定義
+        // ========== 數據定義區域 ==========
+        
+        // 台北市公車業者評鑑數據（110-113年度，共8個評鑑期）
         const taipeiData = [
             { name: '新店客運', excellent: 3, good: 5, fair: 0, status: '部分期間', remark: '108年連優，後來下滑，113年回升' },
             { name: '台北客運', excellent: 7, good: 1, fair: 0, status: '優等', remark: '近年表現穩定，連續優等紀錄' },
@@ -607,6 +622,7 @@
             { name: '三重客運', excellent: 8, good: 0, fair: 0, status: '優等', remark: '全期優等，區域營運表現優異' }
         ];
 
+        // 新北市公車業者評鑑數據（111-113年度，共6個評鑑期）
         const newtpData = [
             { name: '台北客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '連續16年優等紀錄' },
             { name: '首都客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '連續優等，跨域運營最佳' },
@@ -615,7 +631,7 @@
             { name: '指南客運', excellent: 2, good: 4, fair: 0, status: '波動', remark: '進步中，113年第2期獲優等' }
         ];
 
-        // 標籤切換功能
+        // ========== 標籤切換功能 ==========
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabName = this.getAttribute('data-tab');
@@ -628,7 +644,7 @@
                 this.classList.add('active');
                 document.getElementById(tabName).classList.add('active');
                 
-                // 初始化圖表
+                // 重新渲染圖表（確保圖表正確顯示）
                 setTimeout(() => {
                     if (tabName === 'overview' && window.overviewChartInstance) {
                         window.overviewChartInstance.resize();
@@ -640,17 +656,21 @@
             });
         });
 
-        // 填充台北市表格
+        // ========== 表格渲染函數 ==========
+        
+        // 渲染台北市評鑑表格
         function renderTaipeiTable() {
             const tbody = document.getElementById('taipeiBody');
-            const filterValue = document.getElementById('taipeiFiler').value;
+            const filterValue = document.getElementById('taipeiFilter').value;
             
             tbody.innerHTML = '';
             
             taipeiData.forEach(row => {
+                // 根據篩選器過濾數據
                 if (filterValue && row.status !== filterValue) return;
                 
                 const tr = document.createElement('tr');
+                // 根據優等次數決定徽章樣式
                 const statusClass = row.excellent === 8 ? 'grade-excellent' : 
                                    row.excellent >= 4 ? 'grade-good' : 'grade-fair';
                 
@@ -665,7 +685,7 @@
             });
         }
 
-        // 填充新北市表格
+        // 渲染新北市評鑑表格
         function renderNewtpTable() {
             const tbody = document.getElementById('newtpBody');
             const filterValue = document.getElementById('newtpFilter').value;
@@ -673,9 +693,11 @@
             tbody.innerHTML = '';
             
             newtpData.forEach(row => {
+                // 根據篩選器過濾數據
                 if (filterValue && row.status !== filterValue) return;
                 
                 const tr = document.createElement('tr');
+                // 根據優等次數決定徽章樣式
                 const statusClass = row.excellent === 6 ? 'grade-excellent' : 'grade-good';
                 
                 tr.innerHTML = `
@@ -693,11 +715,13 @@
         renderTaipeiTable();
         renderNewtpTable();
 
-        // 篩選事件監聽
-        document.getElementById('taipeiFiler').addEventListener('change', renderTaipeiTable);
+        // 篩選器事件監聽
+        document.getElementById('taipeiFilter').addEventListener('change', renderTaipeiTable);
         document.getElementById('newtpFilter').addEventListener('change', renderNewtpTable);
 
-        // 創建概覽圖表
+        // ========== 圖表創建 ==========
+        
+        // 創建概覽圖表（台北市業者優等次數對比）
         setTimeout(() => {
             const ctx = document.getElementById('overviewChart').getContext('2d');
             
@@ -727,6 +751,10 @@
                             labels: {
                                 font: { size: 12 }
                             }
+                        },
+                        title: {
+                            display: true,
+                            text: '台北市公車業者優等評鑑次數統計（110-113年度）'
                         }
                     },
                     scales: {
@@ -735,6 +763,16 @@
                             max: 8,
                             ticks: {
                                 stepSize: 2
+                            },
+                            title: {
+                                display: true,
+                                text: '優等次數'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '業者名稱'
                             }
                         }
                     }
@@ -742,7 +780,7 @@
             });
         }, 100);
 
-        // 創建對比圖表
+        // 創建對比圖表（台北市 vs 新北市共同業者對比）
         setTimeout(() => {
             const ctx = document.getElementById('comparisonChart').getContext('2d');
             
@@ -780,17 +818,36 @@
                             labels: {
                                 font: { size: 12 }
                             }
+                        },
+                        title: {
+                            display: true,
+                            text: '跨域營運業者：台北市 vs 新北市優等次數對比'
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 8
+                            max: 8,
+                            title: {
+                                display: true,
+                                text: '優等次數'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '業者名稱'
+                            }
                         }
                     }
                 }
             });
         }, 100);
+
+        // ========== 頁面載入完成提示 ==========
+        console.log('台北市與新北市公車評鑑儀表板已載入完成！');
+        console.log('數據範圍：110-113年度（2021-2024）');
+        console.log('評鑑業者：台北市9家、新北市5家');
     </script>
 </body>
 </html>
