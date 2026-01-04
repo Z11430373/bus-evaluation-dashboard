@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台北市與新北市公車評鑑儀表板 | Bus Evaluation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #f3f4f6;
+            border-bottom: 2px solid #e5e7eb;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 16px 20px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tab:hover {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .nav-tab.active {
+            color: #1e3a8a;
+            border-bottom-color: #1e3a8a;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.taipei {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+
+        .stat-card.newtp {
+            background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #f3f4f6;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .grade-excellent {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .grade-good {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .grade-fair {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .grade-poor {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        select:hover {
+            border-color: #9ca3af;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #0284c7;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+
+        .info-box h3 {
+            color: #0c4a6e;
+            margin-bottom: 8px;
+        }
+
+        .info-box p {
+            color: #0c4a6e;
+            line-height: 1.6;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e5e7eb;
+        }
+
+        .comparison-table th {
+            background: linear-gradient(90deg, #1e40af, #ea580c);
+            color: white;
+        }
+
+        .footer {
+            background: #f3f4f6;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .indicator-list {
+            list-style: none;
+            margin: 15px 0;
+        }
+
+        .indicator-list li {
+            padding: 10px;
+            margin: 8px 0;
+            background: #f9fafb;
+            border-left: 4px solid #1e3a8a;
+            border-radius: 4px;
+        }
+
+        .indicator-list strong {
+            color: #1e3a8a;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tab {
+                min-width: 100%;
+                border-bottom: 2px solid #e5e7eb;
+                border-right: none;
+            }
+
+            .nav-tab.active {
+                border-bottom-color: #1e3a8a;
+                border-right: 3px solid #1e3a8a;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .comparison-table {
+                font-size: 0.9em;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚌 台北市與新北市公車評鑑儀表板</h1>
+            <p>Bus Service Quality Evaluation Dashboard</p>
+            <p class="subtitle">110-113年度 (2021-2024) 評鑑數據分析</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="overview">📊 概覽</button>
+            <button class="nav-tab" data-tab="taipei">🏙️ 台北市評鑑</button>
+            <button class="nav-tab" data-tab="newtp">🌆 新北市評鑑</button>
+            <button class="nav-tab" data-tab="comparison">⚖️ 對比分析</button>
+            <button class="nav-tab" data-tab="indicators">📋 評鑑指標</button>
+        </div>
+
+        <div class="content">
+            <!-- 概覽標籤 -->
+            <div id="overview" class="tab-content active">
+                <h2 style="margin-bottom: 20px; color: #1e3a8a;">整體概覽</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card taipei">
+                        <div class="stat-label">台北市優等業者</div>
+                        <div class="stat-number">7</div>
+                        <div class="stat-label">共9家評鑑業者</div>
+                    </div>
+                    <div class="stat-card newtp">
+                        <div class="stat-label">新北市優等業者</div>
+                        <div class="stat-number">5</div>
+                        <div class="stat-label">共8家評鑑業者</div>
+                    </div>
+                    <div class="stat-card taipei">
+                        <div class="stat-label">台北客運連續優等</div>
+                        <div class="stat-number">16年</div>
+                        <div class="stat-label">新北市紀錄</div>
+                    </div>
+                    <div class="stat-card newtp">
+                        <div class="stat-label">首都客運評分最高</div>
+                        <div class="stat-number">100分</div>
+                        <div class="stat-label">111年第2期</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="overviewChart"></canvas>
+                </div>
+
+                <div class="info-box">
+                    <h3>📌 關鍵發現</h3>
+                    <p>✅ <strong>首都客運、台北客運、欣欣客運、大都會客運</strong>在台北市保持穩定優等地位</p>
+                    <p>✅ <strong>台北、首都客運在新北市連續16年獲得優等</strong>，展示卓越的跨域運營能力</p>
+                    <p>✅ 指南、新店等業者呈現<span class="highlight">進步趨勢</span>，通過改善制度逐步回升至優等</p>
+                </div>
+            </div>
+
+            <!-- 台北市標籤 -->
+            <div id="taipei" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #1e3a8a;">台北市公車評鑑結果</h2>
+                
+                <div class="filter-group">
+                    <label>篩選等級：</label>
+                    <select id="taipeiFiler">
+                        <option value="">全部</option>
+                        <option value="優等">優等</option>
+                        <option value="甲等">甲等</option>
+                        <option value="乙等">乙等</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="taipeiTable">
+                        <thead>
+                            <tr>
+                                <th>業者名稱</th>
+                                <th>優等次數<br>(8期)</th>
+                                <th>甲等次數</th>
+                                <th>評級狀態</th>
+                                <th>備註</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taipeiBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <h3>📊 台北市評鑑週期</h3>
+                    <p>自108年度開始，台北市每年進行<strong>2期評鑑</strong>，至113年度共<strong>8個評鑑期</strong>。主要評鑑業者包括九大聯營公車業者。</p>
+                </div>
+            </div>
+
+            <!-- 新北市標籤 -->
+            <div id="newtp" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #ea580c;">新北市公車評鑑結果</h2>
+                
+                <div class="filter-group">
+                    <label>篩選等級：</label>
+                    <select id="newtpFilter">
+                        <option value="">全部</option>
+                        <option value="優等">優等</option>
+                        <option value="甲等">甲等</option>
+                        <option value="乙等">乙等</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table id="newtpTable">
+                        <thead>
+                            <tr>
+                                <th>業者名稱</th>
+                                <th>優等次數<br>(6期)</th>
+                                <th>甲等次數</th>
+                                <th>評級狀態</th>
+                                <th>特殊成就</th>
+                            </tr>
+                        </thead>
+                        <tbody id="newtpBody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="info-box">
+                    <h3>⭐ 新北市優等紀錄</h3>
+                    <p><strong>台北客運、首都客運</strong>連續16年（113年度評鑑時）在新北市獲得優等評級，創造了台灣公車評鑑史上的卓越紀錄。</p>
+                </div>
+            </div>
+
+            <!-- 對比分析標籤 -->
+            <div id="comparison" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #1e3a8a;">台北市 vs 新北市</h2>
+                
+                <div class="chart-container">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
+
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: #1e3a8a;">評鑑體系對比</h3>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>評鑑項目</th>
+                            <th>台北市</th>
+                            <th>新北市</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>年度評鑑期數</strong></td>
+                            <td>2期</td>
+                            <td>2期</td>
+                        </tr>
+                        <tr>
+                            <td><strong>評鑑業者數</strong></td>
+                            <td>約9家</td>
+                            <td>約8家</td>
+                        </tr>
+                        <tr>
+                            <td><strong>評估項目</strong></td>
+                            <td>5大項26細項</td>
+                            <td>5大項26細項</td>
+                        </tr>
+                        <tr>
+                            <td><strong>優等比例</strong></td>
+                            <td>約77%</td>
+                            <td>約62%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>側重領域</strong></td>
+                            <td>服務品質與駕駛員管理</td>
+                            <td>設施安全與管理制度</td>
+                        </tr>
+                        <tr>
+                            <td><strong>共同評鑑業者</strong></td>
+                            <td colspan="2">台北客運、首都客運、大都會客運、三重客運</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="info-box" style="margin-top: 20px;">
+                    <h3>🔍 對比分析重點</h3>
+                    <p><strong>相同點：</strong> 兩市均採5大指標體系，評鑑標準一致，年度2期評鑑</p>
+                    <p><strong>差異點：</strong> 台北市優等比例高於新北市；新北市評鑑業者多為本地運營，台北市包含多家跨區域業者</p>
+                </div>
+            </div>
+
+            <!-- 評鑑指標標籤 -->
+            <div id="indicators" class="tab-content">
+                <h2 style="margin-bottom: 20px; color: #1e3a8a;">評鑑指標說明</h2>
+                
+                <div class="info-box">
+                    <h3>📋 五大評估項目與26個細項指標</h3>
+                </div>
+
+                <h3 style="margin-top: 20px; color: #1e3a8a;">1️⃣ 場站設施與服務</h3>
+                <ul class="indicator-list">
+                    <li><strong>場站環境安全：</strong>月台、候車亭、無障礙設施的完整性與安全性</li>
+                    <li><strong>場站衛生清潔：</strong>定期清潔、廢棄物管理、消毒防疫措施</li>
+                    <li><strong>無障礙環境：</strong>輪椅上下車設施、盲人引導磚、扶手配置</li>
+                    <li><strong>服務設施：</strong>時刻表、路線圖、售票系統、候車座位</li>
+                </ul>
+
+                <h3 style="color: #1e3a8a;">2️⃣ 運輸工具設備與安全</h3>
+                <ul class="indicator-list">
+                    <li><strong>車輛外觀維護：</strong>外殼清潔、車牌清晰、標線完整</li>
+                    <li><strong>車內衛生設施：</strong>座椅狀況、扶手清潔、冷氣風量</li>
+                    <li><strong>安全設備配備：</strong>滅火器、急救箱、ADAS系統、主動式車門安全系統</li>
+                    <li><strong>定期檢驗保養：</strong>年度檢驗證書、保養紀錄、零件更新</li>
+                </ul>
+
+                <h3 style="color: #1e3a8a;">3️⃣ 旅客服務品質與駕駛員管理</h3>
+                <ul class="indicator-list">
+                    <li><strong>駕駛員服務態度：</strong>禮貌應答、主動協助乘客、安全駕駛示範</li>
+                    <li><strong>駕駛員培訓管理：</strong>定期安全教育、駕駛技能檢測、違規扣分制度</li>
+                    <li><strong>班次準點率：</strong>到站時間誤差控制、班次間距穩定性</li>
+                    <li><strong>乘客申訴處理：</strong>受理程序、處理時效、後續改善追蹤</li>
+                </ul>
+
+                <h3 style="color: #1e3a8a;">4️⃣ 無障礙之場站設施、服務、運輸工具設備與安全</h3>
+                <ul class="indicator-list">
+                    <li><strong>銀髮族友善設計：</strong>扶手配置高度、上下車步階高度、座位寬度</li>
+                    <li><strong>身心障礙者無障礙設施：</strong>輪椅停駐區、盲人語音播報、手語服務</li>
+                    <li><strong>孕婦與兒童照顧：</strong>優先座椅標示、兒童安全欄杆</li>
+                </ul>
+
+                <h3 style="color: #1e3a8a;">5️⃣ 公司經營與管理</h3>
+                <ul class="indicator-list">
+                    <li><strong>內部控制制度：</strong>員工管理規則、财務稽核、風險評估</li>
+                    <li><strong>法律合規性：</strong>勞動法規遵守、稅務申報、營業執照有效性</li>
+                    <li><strong>品質管理制度：</strong>ISO認證、品質改善計畫、顧客滿意度調查</li>
+                    <li><strong>數據透明化：</strong>成績公開、改善計畫發佈、民眾知情權</li>
+                </ul>
+
+                <div class="info-box" style="margin-top: 30px;">
+                    <h3>🎯 2024年創新服務措施</h3>
+                    <p>✅ <strong>ADAS全覆蓋：</strong>台北市於2024年3月完成3,384輛公車的先進駕駛輔助系統安裝</p>
+                    <p>✅ <strong>主動式車門安全系統：</strong>預計至115年完成全市安裝，114年達80%</p>
+                    <p>✅ <strong>降速40km/h標準：</strong>市中心與高風險路段統一降速管制</p>
+                    <p>✅ <strong>行人停讓宣誓：</strong>所有駕駛共同宣誓「停讓行人」安全升級承諾</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>資料來源：台北市公共運輸處、新北市政府交通局 | 更新日期：2025年2月 | 數據截止：113年度第2期</p>
+            <p>© 2025 Bus Evaluation Dashboard | <a href="https://github.com/Z11430373/bus-evaluation-dashboard" style="color: #0284c7; text-decoration: none;">View on GitHub</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 數據定義
+        const taipeiData = [
+            { name: '新店客運', excellent: 3, good: 5, fair: 0, status: '部分期間', remark: '108年連優，後來下滑，113年回升' },
+            { name: '台北客運', excellent: 7, good: 1, fair: 0, status: '優等', remark: '近年表現穩定，連續優等紀錄' },
+            { name: '首都客運', excellent: 8, good: 0, fair: 0, status: '優等', remark: '全期優等，業界領先，分數最高' },
+            { name: '大都會客運', excellent: 8, good: 0, fair: 0, status: '優等', remark: '穩定優等，台北市與新北市雙料最佳' },
+            { name: '欣欣客運', excellent: 8, good: 0, fair: 0, status: '優等', remark: '長期優等，服務品質穩定' },
+            { name: '指南客運', excellent: 4, good: 4, fair: 0, status: '波動', remark: '評級波動，近年有改善跡象' },
+            { name: '中興巴士', excellent: 8, good: 0, fair: 0, status: '優等', remark: '全期優等，五大業者之一' },
+            { name: '大南汽車', excellent: 8, good: 0, fair: 0, status: '優等', remark: '穩定優等，經營績效佳' },
+            { name: '三重客運', excellent: 8, good: 0, fair: 0, status: '優等', remark: '全期優等，區域營運表現優異' }
+        ];
+
+        const newtpData = [
+            { name: '台北客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '連續16年優等紀錄' },
+            { name: '首都客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '連續優等，跨域運營最佳' },
+            { name: '大都會客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '穩定優等，全年評鑑最佳' },
+            { name: '三重客運', excellent: 6, good: 0, fair: 0, status: '優等', remark: '本地化運營，成績穩定' },
+            { name: '指南客運', excellent: 2, good: 4, fair: 0, status: '波動', remark: '進步中，113年第2期獲優等' }
+        ];
+
+        // 標籤切換功能
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // 移除所有active類
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // 新增active類
+                this.classList.add('active');
+                document.getElementById(tabName).classList.add('active');
+                
+                // 初始化圖表
+                setTimeout(() => {
+                    if (tabName === 'overview' && window.overviewChartInstance) {
+                        window.overviewChartInstance.resize();
+                    }
+                    if (tabName === 'comparison' && window.comparisonChartInstance) {
+                        window.comparisonChartInstance.resize();
+                    }
+                }, 100);
+            });
+        });
+
+        // 填充台北市表格
+        function renderTaipeiTable() {
+            const tbody = document.getElementById('taipeiBody');
+            const filterValue = document.getElementById('taipeiFiler').value;
+            
+            tbody.innerHTML = '';
+            
+            taipeiData.forEach(row => {
+                if (filterValue && row.status !== filterValue) return;
+                
+                const tr = document.createElement('tr');
+                const statusClass = row.excellent === 8 ? 'grade-excellent' : 
+                                   row.excellent >= 4 ? 'grade-good' : 'grade-fair';
+                
+                tr.innerHTML = `
+                    <td><strong>${row.name}</strong></td>
+                    <td>${row.excellent}</td>
+                    <td>${row.good}</td>
+                    <td><span class="grade-badge ${statusClass}">${row.status}</span></td>
+                    <td>${row.remark}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 填充新北市表格
+        function renderNewtpTable() {
+            const tbody = document.getElementById('newtpBody');
+            const filterValue = document.getElementById('newtpFilter').value;
+            
+            tbody.innerHTML = '';
+            
+            newtpData.forEach(row => {
+                if (filterValue && row.status !== filterValue) return;
+                
+                const tr = document.createElement('tr');
+                const statusClass = row.excellent === 6 ? 'grade-excellent' : 'grade-good';
+                
+                tr.innerHTML = `
+                    <td><strong>${row.name}</strong></td>
+                    <td>${row.excellent}</td>
+                    <td>${row.good}</td>
+                    <td><span class="grade-badge ${statusClass}">${row.status}</span></td>
+                    <td>${row.remark}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 初始化表格
+        renderTaipeiTable();
+        renderNewtpTable();
+
+        // 篩選事件監聽
+        document.getElementById('taipeiFiler').addEventListener('change', renderTaipeiTable);
+        document.getElementById('newtpFilter').addEventListener('change', renderNewtpTable);
+
+        // 創建概覽圖表
+        setTimeout(() => {
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            
+            const taipeiBusinesses = taipeiData.map(d => d.name);
+            const taipeiExcellent = taipeiData.map(d => d.excellent);
+            
+            window.overviewChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: taipeiBusinesses,
+                    datasets: [
+                        {
+                            label: '台北市優等次數（8期）',
+                            data: taipeiExcellent,
+                            backgroundColor: 'rgba(30, 64, 175, 0.7)',
+                            borderColor: 'rgba(30, 64, 175, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: { size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 8,
+                            ticks: {
+                                stepSize: 2
+                            }
+                        }
+                    }
+                }
+            });
+        }, 100);
+
+        // 創建對比圖表
+        setTimeout(() => {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            const commonBusinesses = ['台北客運', '首都客運', '大都會客運', '三重客運'];
+            const taipeiScores = [7, 8, 8, 8];
+            const newtpScores = [6, 6, 6, 6];
+            
+            window.comparisonChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: commonBusinesses,
+                    datasets: [
+                        {
+                            label: '台北市優等次數',
+                            data: taipeiScores,
+                            backgroundColor: 'rgba(30, 64, 175, 0.7)',
+                            borderColor: 'rgba(30, 64, 175, 1)',
+                            borderWidth: 2
+                        },
+                        {
+                            label: '新北市優等次數',
+                            data: newtpScores,
+                            backgroundColor: 'rgba(234, 88, 12, 0.7)',
+                            borderColor: 'rgba(234, 88, 12, 1)',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: { size: 12 }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 8
+                        }
+                    }
+                }
+            });
+        }, 100);
+    </script>
+</body>
+</html>
